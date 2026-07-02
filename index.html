@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小扳手 · 设备管家 | sbgj.com.cn</title>
+    <style>
+        /* ===== 全局重置 & 字体 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e17;
+            color: #e8edf5;
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ===== 动态粒子画布 ===== */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ===== 网格背景叠加 ===== */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* ===== 内容容器 ===== */
+        .content {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0 40px;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            font-size: 40px;
+            line-height: 1;
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.2)); }
+            50% { filter: drop-shadow(0 0 24px rgba(0, 212, 255, 0.5)); }
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, #64d8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 2px;
+            font-weight: 400;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .domain-tag {
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            padding: 6px 18px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64d8ff;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+
+        .domain-tag span {
+            opacity: 0.5;
+            font-weight: 400;
+            color: #8892b0;
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 48px;
+            padding: 60px 0 40px;
+            flex-wrap: wrap;
+        }
+
+        .hero-left {
+            flex: 1 1 400px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.12);
+            border-radius: 100px;
+            padding: 4px 16px;
+            font-size: 12px;
+            color: #64d8ff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            font-size: clamp(36px, 5vw, 64px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -1px;
+            margin-bottom: 20px;
+        }
+
+        .hero-title .highlight {
+            background: linear-gradient(135deg, #64d8ff, #0070f3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desc {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.55);
+            max-width: 480px;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 2px;
+        }
+
+        /* ===== 右侧视觉 ===== */
+        .hero-right {
+            flex: 0 0 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .hero-illustration {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.08), rgba(0, 112, 243, 0.02));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 120px;
+            animation: float 6s ease-in-out infinite;
+            border: 1px solid rgba(0, 212, 255, 0.06);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-16px); }
+        }
+
+        .hero-illustration .wrench {
+            filter: drop-shadow(0 0 40px rgba(0, 212, 255, 0.15));
+        }
+
+        /* ===== 特性卡片 ===== */
+        .features {
+            padding: 60px 0 20px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .section-sub {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 16px;
+            margin-bottom: 48px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            padding: 28px 24px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(0, 212, 255, 0.12);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .feature-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #e8edf5;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.35);
+            line-height: 1.5;
+        }
+
+        /* ===== CTA ===== */
+        .cta-section {
+            text-align: center;
+            padding: 60px 0 20px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0070f3, #0050c8);
+            color: #ffffff;
+            padding: 14px 48px;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0, 112, 243, 0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(0, 112, 243, 0.35);
+        }
+
+        .cta-sub {
+            margin-top: 16px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            margin-top: 60px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #64d8ff;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .domain-tag {
+                font-size: 12px;
+                padding: 4px 14px;
+            }
+
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding: 30px 0;
+            }
+
+            .hero-left {
+                flex: 1 1 auto;
+            }
+
+            .hero-desc {
+                max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .hero-right {
+                flex: 0 0 auto;
+            }
+
+            .hero-illustration {
+                width: 200px;
+                height: 200px;
+                font-size: 80px;
+            }
+
+            .section-title {
+                font-size: 24px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .footer {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content {
+                padding: 24px 16px 60px;
+            }
+
+            .brand-name {
+                font-size: 22px;
+            }
+
+            .brand-icon {
+                font-size: 32px;
+            }
+
+            .hero-title {
+                font-size: 28px;
+            }
+
+            .hero-illustration {
+                width: 160px;
+                height: 160px;
+                font-size: 64px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-number {
+                font-size: 22px;
+            }
+
+            .hero-stats {
+                gap: 24px;
+            }
+        }
+
+        /* ===== 滚动条美化 ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0e17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 粒子画布 ===== -->
+    <canvas id="particles-canvas"></canvas>
+    <div class="grid-overlay"></div>
+
+    <!-- ===== 主内容 ===== -->
+    <div class="content">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="brand">
+                <span class="brand-icon">🔧</span>
+                <div class="brand-text">
+                    <span class="brand-name">小扳手 · 设备管家</span>
+                    <span class="brand-sub">SMART DEVICE MANAGEMENT</span>
+                </div>
+            </div>
+            <div class="domain-tag">
+                <span>🌐</span> sbgj.com.cn
+            </div>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-left">
+                <div class="hero-badge">⚡ 专业设备监控管理平台</div>
+                <h1 class="hero-title">
+                    让设备管理<br>
+                    <span class="highlight">更智能 · 更高效</span>
+                </h1>
+                <p class="hero-desc">
+                    小扳手设备管家 —— 轻量级、可扩展的设备监控管理系统。<br>
+                    支持多类型设备、实时告警、数据可视化。
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">10+</span>
+                        <span class="stat-label">设备类型</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">实时监控</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">7×24</span>
+                        <span class="stat-label">稳定运行</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-right">
+                <div class="hero-illustration">
+                    <span class="wrench">🔧</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <h2 class="section-title">核心功能</h2>
+            <p class="section-sub">一站式设备管理解决方案</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">📟</span>
+                    <div class="feature-name">设备管理</div>
+                    <div class="feature-desc">多类型设备统一管理，在线状态实时监控</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📁</span>
+                    <div class="feature-name">分组管理</div>
+                    <div class="feature-desc">灵活的设备分组，支持多级组织结构</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔔</span>
+                    <div class="feature-name">告警监控</div>
+                    <div class="feature-desc">实时告警推送，支持弹窗、企业微信通知</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📡</span>
+                    <div class="feature-name">网络工具</div>
+                    <div class="feature-desc">Ping、抓包、TCP调试，一站式网络诊断</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📬</span>
+                    <div class="feature-name">API 请求</div>
+                    <div class="feature-desc">内置 Postman 风格 HTTP 请求工具</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔑</span>
+                    <div class="feature-name">许可证管理</div>
+                    <div class="feature-desc">安全可靠的软件授权与激活机制</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <a href="#" class="cta-button">🚀 立即体验</a>
+            <p class="cta-sub">小扳手设备管家 · 让设备管理更简单</p>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>© 2026 小扳手 · 设备管家</span>
+            <div class="footer-links">
+                <a href="#">首页</a>
+                <a href="#">关于</a>
+                <a href="#">帮助</a>
+                <a href="mailto:support@sbgj.com.cn">联系我们</a>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- ===== 粒子动画脚本 ===== -->
+    <script>
+        (function() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+            const PARTICLE_COUNT = 80;
+            const CONNECTION_DIST = 150;
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.6;
+                    this.vy = (Math.random() - 0.5) * 0.6;
+                    this.radius = Math.random() * 2 + 1.5;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(100, 216, 255, ${this.opacity})`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push(new Particle());
+            }
+
+            function drawLines() {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < CONNECTION_DIST) {
+                            const alpha = (1 - dist / CONNECTION_DIST) * 0.15;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(100, 216, 255, ${alpha})`;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                drawLines();
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            // 窗口尺寸变化时重置粒子位置
+            window.addEventListener('resize', () => {
+                particles.forEach(p => {
+                    p.x = Math.random() * width;
+                    p.y = Math.random() * height;
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>
